@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Crotochat</title>
+
+    <script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-app.js"></script>
+
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-database.js"></script>
+
+
+    <style media="screen">
+        .off {
+            display: none;
+        }
+
+        .redondo {
+            border-radius: 50%;
+            width: 200px;
+
+        }
+
+        body {
+            background: #ECEFF1;
+            color: rgba(0, 0, 0, 0.87);
+            font-family: Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #message {
+            background: white;
+            max-width: 360px;
+            margin: 100px auto 16px;
+            padding: 32px 24px;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        #message h2 {
+            color: #ffa100;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 0 0 8px;
+        }
+
+        #message h1 {
+            font-size: 22px;
+            font-weight: 300;
+            color: rgba(0, 0, 0, 0.6);
+            margin: 0 0 16px;
+        }
+
+        #message p {
+            line-height: 140%;
+            margin: 16px 0 24px;
+            font-size: 14px;
+        }
+
+        #message a {
+            display: block;
+            text-align: center;
+            background: #039be5;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: white;
+            padding: 16px;
+            border-radius: 4px;
+        }
+
+        #message,
+        #message a {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+
+        #load {
+            color: rgba(0, 0, 0, 0.4);
+            text-align: center;
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+
+            body,
+            #message {
+                margin-top: 0;
+                background: white;
+                box-shadow: none;
+            }
+
+            body {
+                border-top: 16px solid #ffa100;
+            }
+        }
+
+        #mensajes {
+            text-align: left;
+            list-style: none;
+            height: 200px;
+            overflow: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="message">
+        <img src="https://icons-for-free.com/iconfiles/png/512/business+costume+male+man+office+user+icon-1320196264882354682.png"
+            class="redondo" id="pic" alt="">
+        <h2 id="name">Welcome</h2>
+        <h1></h1>
+        <p id="email">To Crotochat</p>
+        <a target="_blank" id="login" href="">Entrar en Crotochat</a>
+        <a target="_blank" id="logout" style="display: none" href="">Salir de Crotochat</a>
+
+        <div id="mensajesContainer" style="display: none;">
+            <ul id="mensajes">
+            </ul>
+            <input type="text" id="mensaje" placeholder="Escribi algo gato">
+            <button id="pushMensaje">Enviar Mensaje</button>
+        </div>
+    </div>
+
+    <script>
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyAj53c_UXytAf9DbDdnF2xEe39ENSdpiqg",
+            authDomain: "crotochat-d2644.firebaseapp.com",
+            databaseURL: "https://crotochat-d2644.firebaseio.com",
+            projectId: "crotochat-d2644",
+            storageBucket: "crotochat-d2644.appspot.com",
+            messagingSenderId: "472089387984",
+            appId: "1:472089387984:web:31c79b6cc8187ca0728fd5",
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        let btt = document.getElementById('login')
+        let off = document.getElementById('logout')
+        let name = document.getElementById('name')
+        let pic = document.getElementById('pic')
+        let email = document.getElementById('email')
+        let pushMensaje = document.getElementById('pushMensaje')
+        let mensaje = document.getElementById('mensaje')
+        let mensajes = document.getElementById('mensajes')
+        let mensajesContainer = document.getElementById('mensajesContainer')
+
+
+        off.addEventListener("click", (e) => {
+            e.preventDefault();
+            deslogear();
+        })
+        btt.addEventListener("click", (e) => {
+            e.preventDefault();
+            logearConGoogle();
+        })
+        pushMensaje.addEventListener("click", (e) => {
+            e.preventDefault();
+            guardarMensaje();
+        })
+
+        let usuario = {}
+
+        // Funcion para loguearse con cuenta Google
+        function logearConGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider).then(result => {
+                console.log("Logueo", result.user.email);
+                usuario = result;
+                lokearUsuario()
+            }).catch(
+                error => console.log(
+                    error.message))
+
+        }
+
+        // Funcion para desloguear
+        function deslogear() {
+            firebase.auth().signOut().then(function () {
+                console.log('nos deslogeamos')
+                deslokearUsuario()
+            }).catch(function (err) {
+                console.log(err, " error loco")
+            })
+        }
+
+        // Tomo el nombre, mail e imagen de la cuenta Google
+        function lokearUsuario() {
+            btt.style.display = "none";
+            off.style.display = "block";
+            name.innerHTML = usuario.user.displayName
+            email.innerHTML = usuario.user.email
+            pic.src = usuario.user.photoURL
+            mensajesContainer.style.display = "block"
+            mostrame();
+        }
+
+        function deslokearUsuario() {
+            btt.style.display = "block";
+            off.style.display = "none";
+            name.innerHTML = "Welcome"
+            email.innerHTML = "To Crotochat"
+            pic.src =
+                "https://icons-for-free.com/iconfiles/png/512/business+costume+male+man+office+user+icon-1320196264882354682.png"
+            mensajesContainer.style.display = "none"
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            firebase.auth().onAuthStateChanged(user => {
+                if (user) {
+                    usuario = {
+                        "user": user
+                    };
+                    lokearUsuario();
+                }
+            })
+        })
+
+        function guardarMensaje() {
+            const record = {
+                avatar: usuario.user.photoURL,
+                nombre: usuario.user.displayName,
+                txt: mensaje.value
+            }
+            const db = firebase.database();
+            const dbRef = db.ref('mensajes');
+            const newMensaje = dbRef.push();
+            newMensaje.set(record)
+
+            mensaje.value = ""
+        }
+
+        // Mostramos mensajes en pantalla
+        function mostrame() {
+            const db = firebase.database();
+            const dbRef = db.ref('mensajes');
+            dbRef.on("child_added", snapshot => {
+                var item = document.createElement('li');
+                item.innerHTML = '<strong>' + snapshot.val().nombre + '</strong>: ' + snapshot.val().txt;
+                mensajes.appendChild(item);
+                // Hace scroll al ultimo item
+                let items = document.querySelectorAll('li');
+                let last = items[items.length - 1];
+                last.scrollIntoView()
+            })
+        }
+    </script>
+</body>
+
+</html>
